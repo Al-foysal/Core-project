@@ -1,0 +1,158 @@
+﻿@model Trade
+@{
+    ViewData["Title"] = "EditWithCourse";
+}
+<div class="card">
+    <div class="card-header">
+        <h4 class="card-title">Edit Trade</h4>
+    </div>
+    <div class="card-body">
+        <form asp-action="EditWithCourse" id="formTrade" name="formTrade">
+            <h5 class="card-subtitle">Trade info</h5>
+            <div class="card-text" id="part-trade">
+
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="TradeId" />
+                <div class="form-group row">
+                    <label asp-for="TradeName" class="col-form-label col-2 text-right"></label>
+
+                    <div class="col-4">
+                        <input asp-for="TradeName" class="form-control" />
+                        <span asp-validation-for="TradeName" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label asp-for="Description" class="col-form-label col-2 text-right"></label>
+
+                    <div class="col-4">
+                        <input asp-for="Description" class="form-control" />
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group row form-check">
+                    <label class="form-check-label col-4 offset-2">
+                        <input class="form-check-input mt-2" asp-for="FemaleAllowed" /> @Html.DisplayNameFor(model => model.FemaleAllowed)
+                    </label>
+                </div>
+                <div class="form-group row form-check">
+                    <label class="form-check-label col-4 offset-2">
+                        <input class="form-check-input mt-2" asp-for="IndustrialAttachment" /> @Html.DisplayNameFor(model => model.IndustrialAttachment)
+                    </label>
+                </div>
+
+
+            </div>
+            <h5 class="card-subtitle">Courses</h5>
+            <div class="card-text" id="part-course">
+                <table class="table table-bordered">
+
+                    <thead>
+                        <tr>
+                            <th>Course Name</th>
+                            <th>Duration</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.Courses)
+                        {
+                            @await Html.PartialAsync("_EditCourseRow", c)
+                        }
+                    </tbody>
+                </table>
+
+            </div>
+        </form>
+    </div>
+    <div class="card-footer">
+        <div class="d-flex">
+            <a asp-action="Index" asp-controller="Trades"><span class="fa fa-long-arrow-left"></span> Back to list</a>
+            <button type="button" class="btn btn-primary btn-sm ml-auto" id="trade-finish">
+                Update & Finish
+            </button>
+        </div>
+    </div>
+</div>
+
+
+@section styles {
+
+    <environment include="Development">
+        <link href="~/libs/fontawesome/css/font-awesome.css" rel="stylesheet" />
+        <link href="~/libs/bs4-toast/toast.min.css" rel="stylesheet" />
+    </environment>
+}
+@section scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/libs/bs4-toast/toast.min.js"></script>
+    <script>
+        $(document).ready(() => {
+            $("button.del-course").click(function () {
+                $(this).closest("tr").remove();
+            })
+            $("button#trade-finish").click(() => {
+                console.log('ok');
+                var valid = $("form#formTrade").valid();
+                if (!valid) return;
+                var data = {
+                    Courses: []
+                };
+                data.TradeId = $("#TradeId").val();
+                data.TradeName = $("#TradeName").val();
+                data.Description = $("#Description").val();
+                data.FemaleAllowed = $('input#FemaleAllowed').is(':checked');
+                data.IndustrialAttachment = $('input#IndustrialAttachment').is(':checked');
+                var names = $("input[name='CourseName']")
+                var durations = $("input[name='Duration']")
+                $.each($("input[name='CourseId']"), function (i, el) {
+                    //console.log($(el).val());
+                    //console.log($(names[i]).val());
+                    //console.log($(durations[i]).val());
+                    data.Courses.push({ CourseId: $(el).val(), CourseName: $(names[i]).val(), Duration: $(durations[i]).val() });
+                });
+                console.log(data);
+                $.ajax({
+                    type: "POST",
+                    url: "/Trades/EditWithCourse",
+                    contentType: "application/json",
+                    dataType: "json",
+                    data: JSON.stringify(data)
+                }).done(r => {
+                    console.log(r);
+                    if (r.success == true) {
+                        $.toast({
+                            title: 'Success!',
+                            subtitle: 'Saved',
+                            content: 'Data saved successfully.',
+                            type: 'success',
+                            delay: 3000,
+                            dismissible: true,
+
+                            // is stackable?
+                            stackable: true,
+                            position: 'top-right'
+
+                        });
+                    }
+                    else {
+                        $.toast({
+                            title: 'Error!',
+                            subtitle: 'Failed.',
+                            content: 'Data update failed.',
+                            type: 'warning',
+                            delay: 3000,
+                            dismissible: true,
+
+                            // is stackable?
+                            stackable: true,
+                            position: 'top-center bottom-right'
+
+                        });
+                    }
+                }).fail(err => {
+                    console.log(err);
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,247 @@
+﻿@model M7_Class_37_Work_01.Models.Trade
+
+@{
+    ViewData["Title"] = "CreateTradeWithCourse";
+}
+
+            <div id="smartwizard">
+                <ul class="nav">
+                    <li>
+                        <a class="nav-link" href="#step-1">
+                            Trade
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link" href="#step-2">
+                            Course
+                        </a>
+                    </li>
+                    <li>
+                        <a class="nav-link" href="#step-3">
+                            Summary
+                        </a>
+                    </li>
+
+                </ul><!-- wizard nav-->
+                <div class="tab-content">
+                    <div id="step-1" class="tab-pane" role="tabpanel">
+                        <h4 class="offset-2 border-bottom mb-3">Create Trade</h4>
+                        <form asp-action="CreateTradeWithCourse" id="formTrade">
+                            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                            <div class="form-group row">
+                                <label asp-for="TradeName" class="col-form-label col-2 text-right"></label>
+
+                                <div class="col-4">
+                                    <input asp-for="TradeName" class="form-control" />
+                                    <span asp-validation-for="TradeName" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label asp-for="Description" class="col-form-label col-2 text-right"></label>
+
+                                <div class="col-4">
+                                    <input asp-for="Description" class="form-control" />
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="form-group row form-check">
+                                <label class="form-check-label col-4 offset-2">
+                                    <input class="form-check-input mt-2" asp-for="FemaleAllowed" /> @Html.DisplayNameFor(model => model.FemaleAllowed)
+                                </label>
+                            </div>
+                            <div class="form-group row form-check">
+                                <label class="form-check-label col-4 offset-2">
+                                    <input class="form-check-input mt-2" asp-for="IndustrialAttachment" /> @Html.DisplayNameFor(model => model.IndustrialAttachment)
+                                </label>
+                            </div>
+                        </form>
+                       
+                    </div>
+                    <div id="step-2" class="tab-pane" role="tabpanel" style="height:300px;overflow:auto">
+                        <form id="formCourse">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Course Name</th>
+                                        <th>Duration</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="courseTableBody"></tbody>
+                                <tfoot>
+                                    @await Html.PartialAsync("_CourseAddRowPartial", new Course { })
+                                    
+                                </tfoot>
+                            </table>
+                        </form>
+                        
+                    </div>
+                    <div id="step-3" class="tab-pane" role="tabpanel">
+                        <table class="table table-bordered">
+                            <tr>
+                                <th style="width:180px">Trade Name</th>
+                                <td><span id="spanTradeName"></span></td>
+                            </tr>
+                            <tr>
+                                <th>Description</th>
+                                <td><span id="spanTradeDesc"></span></td>
+                            </tr>
+                            <tr>
+                                <th>Female Allowed?</th>
+                                <td><span id="spanFemale"></span></td>
+                            </tr>
+                            <tr>
+                                <th>Female Allowed?</th>
+                                <td><span id="spanAttachment"></span></td>
+                            </tr>
+                            <tr>
+                                <th colspan="2">Courses</th>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Course Name</th>
+                                                <th>Duration</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="courseSummaryBody">
+
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                </div><!-- tab content-->
+            </div><!-- Wizard-->
+
+
+
+
+<div class="toast" id="toastTrade" role="alert" aria-live="assertive" aria-atomic="true" data-delay="5000" style="position: absolute; top: 70px; right: 1rem;">
+    <div class="toast-header">
+
+        <strong class="mr-auto">Warning</strong>
+        <small>Error</small>
+        <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="toast-body">
+        There are some errors. Check the fields.
+    </div>
+</div>
+<div class="toast" id="toastCourse" role="alert" aria-live="assertive" aria-atomic="true" data-delay="5000" style="position: absolute; top: 70px; right: 1rem;">
+    <div class="toast-header">
+
+        <strong class="mr-auto">Warning</strong>
+        <small>Check</small>
+        <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="toast-body">
+        No courses added;
+    </div>
+</div>
+@section styles {
+
+    <environment include="Development">
+        <link href="~/libs/fontawesome/css/font-awesome.css" rel="stylesheet" />
+        <link href="~/libs/smartwizard/css/smart_wizard_all.css" rel="stylesheet" />
+    </environment>
+}
+@section scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <environment include="Development">
+        <link href="~/libs/fontawesome/css/font-awesome.css" rel="stylesheet" />
+        <script src="~/libs/smartwizard/js/jquery.smartWizard.js"></script>
+        <script>
+            var trade = {
+                Courses:[]
+            };
+            $(document).ready(function () {
+
+                 //SmartWizard initialize
+                $('#smartwizard').smartWizard({
+                    selected: 0, // Initial selected step, 0 = first step
+                    theme: 'arrows',
+                    autoAdjustHeight: true
+                    
+                });
+               
+                $("#smartwizard").on("leaveStep", function (e, anchorObject, currentStepIndex, nextStepIndex, stepDirection) {
+                    //console.log(currentStepIndex);
+                    //console.log(nextStepIndex);
+
+                    console.log(stepDirection);
+                    if (currentStepIndex == 0) {
+                        var valid = $('form#formTrade').valid();
+                        if (!valid) $('#toastTrade').toast('show');
+                        if (valid) {
+                            trade.TradeName = $('#TradeName').val();
+                            trade.Description = $('#Description').val();
+                            trade.FemaleAllowed = $('input#FemaleAllowed').is(':checked');
+                            trade.IndustrialAttachment = $('input#IndustrialAttachment').is(':checked');
+                            //console.log(trade);
+                        }
+                        return valid;
+                    }
+                    if (currentStepIndex == 1) {
+                        if (trade.Courses.length > 0) {
+                            $("#courseTableBody").empty();
+                            for (var i = 0; i < trade.Courses.length; i++) {
+                                $(`<tr>
+                                        <td>${trade.Courses[i].CourseName}</td>
+                                        <td>${trade.Courses[i].Duration}</td>
+                                        <td><button class="btn btn-danger btn-sm" data-index=${i}><span class="fa fa-trash"></span></button></td>
+                                    </tr>`)
+                                    .appendTo($("#courseTableBody"));
+                            }
+                        }
+                    }
+                    if (nextStepIndex == 2) {
+                        console.log(trade.Courses.length)
+                        if (trade.Courses.length == 0) {
+                            $('#toastCourse').toast('show');
+                        }
+                      
+                        $("span#spanTradeName").html(trade.TradeName);
+                        $("span#spanTradeDesc").html(trade.Description);
+                        $("span#spanFemale").html(trade.FemaleAllowed ? "Yes": "No");
+                        $("span#spanAttachment").html(trade.IndustrialAttachment ? "Yes" : "No");
+                        if (trade.Courses.length > 0) {
+                            $("#courseSummaryBody").empty();
+                            for (var i = 0; i < trade.Courses.length; i++) {
+                                $(`<tr>
+                                        <td>${trade.Courses[i].CourseName}</td>
+                                        <td>${trade.Courses[i].Duration}</td>
+                                       
+                                    </tr>`)
+                                    .appendTo($("#courseSummaryBody"));
+                            }
+                        }
+                      
+                    }
+                });
+               
+                $("button.add").click(function () {
+                    console.log($("#CourseName").val());
+                    trade.Courses.push({ CourseName: $("#CourseName").val(), Duration: $("#Duration").val() })
+                    console.log(trade);
+                    var i = trade.Courses.length - 1;
+                    $(`<tr>
+                                        <td>${trade.Courses[i].CourseName}</td>
+                                        <td>${trade.Courses[i].Duration}</td>
+                                        <td><button class="btn btn-danger btn-sm" data-index=${i}><span class="fa fa-trash"></span></button></td>
+                                    </tr>`)
+                        .appendTo($("#courseTableBody"));
+                });
+            });
+        </script>
+    </environment>
+}

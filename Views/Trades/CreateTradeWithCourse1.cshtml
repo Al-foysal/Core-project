@@ -1,0 +1,241 @@
+﻿@model Trade
+@{
+    ViewData["Title"] = "CreateTradeWithCourse1";
+}
+
+<div class="card bg-white" id="trade-card">
+    <div class="card-header">
+        <h4>Create Trade</h4>
+    </div>
+    <div class="card-body">
+
+        <div class="card-text">
+            <form asp-action="CreateTradeWithCourse" id="formTrade">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group row">
+                    <label asp-for="TradeName" class="col-form-label col-2 text-right"></label>
+
+                    <div class="col-4">
+                        <input asp-for="TradeName" class="form-control" />
+                        <span asp-validation-for="TradeName" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label asp-for="Description" class="col-form-label col-2 text-right"></label>
+
+                    <div class="col-4">
+                        <input asp-for="Description" class="form-control" />
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group row form-check">
+                    <label class="form-check-label col-4 offset-2">
+                        <input class="form-check-input mt-2" asp-for="FemaleAllowed" /> @Html.DisplayNameFor(model => model.FemaleAllowed)
+                    </label>
+                </div>
+                <div class="form-group row form-check">
+                    <label class="form-check-label col-4 offset-2">
+                        <input class="form-check-input mt-2" asp-for="IndustrialAttachment" /> @Html.DisplayNameFor(model => model.IndustrialAttachment)
+                    </label>
+                </div>
+                <div class="form-group row">
+                    <div class="col-6 text-right">
+                        <button type="button" id="trade-next" class="btn btn-primary btn-sm mr-3">Next</button>
+                    </div>
+
+
+                </div>
+            </form>
+
+        </div>
+
+
+    </div>
+</div>
+<div class="card" id="course-card" style="display:none">
+    <div class="card-header">Add Course</div>
+    <div class="card-body">
+        <form id="formCourse">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Course Name</th>
+                        <th>Duration</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="courseTableBody"></tbody>
+                <tfoot>
+                    @await Html.PartialAsync("_CourseAddRowPartial", new Course { })
+
+                </tfoot>
+            </table>
+        </form>
+
+    </div>
+    <div class="card-footer">
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-primary btn-sm" id="trade-finish">
+                Save & Finish
+            </button>
+        </div>
+    </div>
+</div>
+<div class="card bg-white">
+    <div class="card-footer">
+        <div class="d-flex">
+            <a class="card-link" asp-action="Index"><span class="fa fa-long-arrow-left"></span> Back to list</a>
+            <a class="card-link ml-auto" asp-action="Create" asp-controller="Courses">Assign course <span class="fa fa-long-arrow-right"></span></a>
+        </div>
+    </div>
+</div>
+
+<div aria-live="polite" aria-atomic="true" style="position: absolute; top:70px; right:1rem; min-height: 200px;">
+    <!-- Position it -->
+    <div style="position: absolute; top: 70px; right: 0;min-width:200px">
+
+        <!-- Then put toasts within -->
+        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="3000" id="toastTrade">
+            <div class="toast-header">
+
+                <strong class="mr-auto">Warning</strong>
+                <small class="text-muted">error</small>
+                <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="toast-body">
+                There are some errors
+            </div>
+        </div>
+
+        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="3000" id="toastCourse">
+            <div class="toast-header">
+
+                <strong class="mr-auto">Warning</strong>
+                <small class="text-muted">missing</small>
+                <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="toast-body">
+                No course added.
+            </div>
+        </div>
+        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-delay="3000" id="toastResult">
+            <div class="toast-header">
+
+                <strong class="mr-auto">Success</strong>
+                <small class="text-muted">saved</small>
+                <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="toast-body">
+                Data saved successfully.
+            </div>
+        </div>
+    </div>
+</div>
+@section styles {
+
+    <environment include="Development">
+        <link href="~/libs/fontawesome/css/font-awesome.css" rel="stylesheet" />
+
+    </environment>
+}
+@section scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <environment include="Development">
+       
+
+        <script>
+            var trade = {
+                Courses: []
+            };
+            $(document).ready(function () {
+                $("#trade-next").click(() => {
+                    var valid = $('form#formTrade').valid();
+                    if (valid) {
+
+                        $("#course-card").show();
+                    }
+                    else $("#course-card").hide();
+                });
+                $("button.add").click(function () {
+                    //console.log($("#CourseName").val());
+                    if (!$("#formCourse").valid()) return;
+                    trade.Courses.push({ CourseName: $("#CourseName").val(), Duration: $("#Duration").val() });
+                    fillCourseTable();
+                    
+                    $("#CourseName").val("");
+                    $("#Duration").val("")
+                });
+               
+                $("#trade-finish").click(() => {
+                    var valid = $('form#formTrade').valid();
+                    if (!valid) {
+                        $('#toastTrade').toast('show');
+                    }
+                    if (trade.Courses.length == 0) {
+                        $('#toastCourse').toast('show');
+                    }
+                    if (!valid || trade.Courses.length == 0) return;
+                    trade.TradeName = $('#TradeName').val();
+                    trade.Description = $('#Description').val();
+                    trade.FemaleAllowed = $('input#FemaleAllowed').is(':checked');
+                    trade.IndustrialAttachment = $('input#IndustrialAttachment').is(':checked');
+                    console.log(trade);
+                    var dataType = 'application/json; charset=utf-8';
+                    $.ajax({
+                        type: "POST",
+                        url: "/Trades/CreateTradeWithCourse",
+                        dataType: "json",
+                        contentType: "application/json",
+                        data: JSON.stringify(trade),
+                        complete: function (jqXHR) {
+                            if (jqXHR.readyState === 4) {
+                                
+                                var r = JSON.parse(jqXHR.responseText);
+                                console.log(r);
+                                if (r.success == true) {
+                                    console.log('ok');
+                                    $('#toastResult').toast('show');
+                                    $('form#formTrade').trigger('reset');
+                                    trade = {
+                                        Courses: []
+                                    };
+                                    $("#courseTableBody").empty();
+                                }
+
+
+                            }
+                        }
+                    });
+                });
+            });
+            function fillCourseTable() {
+                $("#courseTableBody").empty();
+                //console.log(trade);
+                var i = trade.Courses.length - 1;
+                for (var i = 0; i < trade.Courses.length; i++) {
+                    $(`<tr>
+                                                                                <td>${trade.Courses[i].CourseName}</td>
+                                                                                <td>${trade.Courses[i].Duration}</td>
+                                                                                <td><button type='button' class="btn btn-danger btn-sm del-course" data-index=${i}><span class="fa fa-trash"></span></button></td>
+                                                                            </tr>`)
+                        .appendTo($("#courseTableBody"));
+                }
+                    $("button.del-course").click(function () {
+                        
+                        var index = $(this).data("index");
+                        trade.Courses.splice(index, 1);
+                        $(this).closest("tr").remove();
+                    });
+              
+                
+            }
+        </script>
+    </environment>
+}

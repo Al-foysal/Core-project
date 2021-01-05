@@ -1,0 +1,219 @@
+﻿@model Course
+@{
+    ViewData["Title"] = "Create";
+}
+
+
+<div class="card bg-white">
+    <div class="card-header bg-dark text-white">
+        <h4 class="card-title">Assign Student to Course</h4>
+    </div>
+    <div class="card-body">
+        <div class="card-text">
+            <h5 class="card-subtitle">Trade and Course</h5>
+            <form id="formCourse">
+                <div class="form-group row">
+                    <label asp-for="TradeId" class="col-form-label col-2 text-right"></label>
+                    <div class="col-4">
+                        <select class="form-control" asp-for="TradeId" asp-items="@(new SelectList(ViewBag.Trades,"TradeId", "TradeName"))"></select>
+                        <span asp-validation-for="TradeId" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label asp-for="CourseId" class="col-form-label col-2 text-right"></label>
+                    <div class="col-4">
+                        <select class="form-control" asp-for="CourseId"></select>
+                        <span asp-validation-for="CourseId" class="text-danger"></span>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="card-text" id="part-students">
+            <h5 class="card-subtitle">Students</h5>
+            <form id="formStudents">
+                <table class="table table-bordered">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Birth Date</th>
+                            <th>Email</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTbody"></tbody>
+                    <tfoot>
+                        @await Html.PartialAsync("_StudentAddRow", new Student { })
+                    </tfoot>
+                </table>
+            </form>
+            <div class="text-right">
+                <button type="button" class="btn btn-success" id="saveall">Save All</button>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer">
+        
+            <div class="d-flex">
+                <a class="card-link" asp-action="Index"><span class="fa fa-long-arrow-left"></span> Back to list</a>
+                <a class="card-link ml-auto" asp-action="CreateSingle">Create course <span class="fa fa-long-arrow-right"></span></a>
+            </div>
+       
+    </div>
+</div>
+
+@section styles {
+
+    <environment include="Development">
+        <link href="~/libs/fontawesome/css/font-awesome.css" rel="stylesheet" />
+        <link href="~/libs/gijgo/css/gijgo.css" rel="stylesheet" />
+        <link href="~/libs/bs4-toast/toast.min.css" rel="stylesheet" />
+    </environment>
+}
+@section scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/libs/bs4-toast/toast.min.js"></script>
+    <script src="~/libs/gijgo/js/gijgo.js"></script>
+    <script>
+        var students = [];
+        $(document).ready(() => {
+            $("#part-students").hide();
+            var selectCourse = $("#CourseId")
+            $("#CourseId").attr("disabled", "disabled");
+
+            $("#DOB").datepicker({
+                uiLibrary: 'bootstrap4',
+                format: 'yyyy-mm-dd'
+            });
+            $("#DOB").val('');
+            
+            $("#TradeId").on("change", function () {
+
+                var tradeId = $(this).val();
+                if (tradeId != 0) {
+                    $.ajax({
+                        type: "GET",
+                        url: "/Courses/GetCourseOptions/" + tradeId,
+                        dataType: "json"
+                    }).done((r) => {
+                        console.log(r);
+                        selectCourse.empty();
+                        for (var i = 0; i < r.length; i++) {
+                            $(`<option value="${r[i].courseId}">${r[i].courseName}</option>`)
+                                .appendTo(selectCourse);
+                        }
+                        selectCourse.removeAttr("disabled");
+                    })
+                        .fail((err) => {
+                            console.log(err);
+                        });
+
+                }
+                else {
+                    selectCourse.empty();
+                    selectCourse.attr("disabled", "disabled");
+                    $("#part-students").hide();
+                }
+            });
+            $("#CourseId").on("change", function () {
+                //console.log('ok')
+                if ($("#CourseId").val() == '0' || $("#TradeId").val() == '0') {
+                    $("#part-students").hide();
+                    return;
+                }
+
+                $("#part-students").show();
+            });
+            $('button.student-add').click(function () {
+                var valid = $("#formStudents").valid();
+                if (!valid) return;
+                students.push({
+                    CourseId: $("#CourseId").val(),
+                    StudentName: $("#StudentName").val(),
+                    DOB: $("#DOB").val(),
+                    Email: $("#Email").val()
+                });
+                console.log(students);
+                fillStudentsTable();
+                $("#formStudents").trigger('reset');
+                $("#DOB").val('');
+            });
+            
+            $("#saveall").click(function () {
+                if (students.length == 0) {
+                    $.toast({
+                        title: 'Error!',
+                        subtitle: 'Information missing.',
+                        content: 'No student added.',
+                        type: 'warning',
+                        delay: 3000,
+                        dismissible: true,
+
+                        // is stackable?
+                        stackable: true,
+                        position: 'top-center bottom-right'
+
+                    });
+                    return;
+                }
+                $.ajax({
+                    type: "POST",
+                    url: "/Courses/SaveStudents",
+                    type: "josn",
+                    dataType: "json",
+                    contentType: "application/json",
+                    data: JSON.stringify(students),
+                }).done(function (r) {
+                    if (r.success == false) {
+                        $.toast({
+                            title: 'Error!',
+                            subtitle: 'Information missing.',
+                            content: 'No student added.',
+                            type: 'warning',
+                            delay: 3000,
+                            dismissible: true,
+
+                            // is stackable?
+                            stackable: true,
+                            position: 'top-center bottom-right'
+
+                        });
+                        return;
+                    }
+                    $.toast({
+                        title: 'Success!',
+                        subtitle: 'Saved',
+                        content: 'Data saved successfully.',
+                        type: 'success',
+                        delay: 3000,
+                        dismissible: true,
+
+                        // is stackable?
+                        stackable: true,
+                        position: 'top-right'
+                        
+                    });
+                    $("#formCourse").trigger('reset');
+                    students = [];
+                    fillStudentsTable();
+                    $("#part-students").hide();
+                    
+                    $("#CourseId").attr("disabled", "disabled");
+                    $("#formStudents").trigger('reset');
+                    $("#DOB").val('');
+                })
+            });
+        });
+        function fillStudentsTable() {
+            $("#studentTbody").empty();
+            for (var i = 0; i < students.length; i++) {
+                $(`<tr>
+                            <td>${students[i].StudentName}</td>
+                            <td>${students[i].DOB}</td>
+                            <td>${students[i].Email}</td>
+                            <td></td>
+                        </tr>`)
+                    .appendTo($("#studentTbody"));
+            }
+        }
+    </script>
+}
